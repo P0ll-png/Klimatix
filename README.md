@@ -1,24 +1,21 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Klimatix provides community flood reporting and flood intelligence for the Philippines.
 
-## Getting Started
+## Development
 
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
+```sh
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Run a production build with `pnpm build`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project layout
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `app/` contains routes and their route-specific UI.
+- `components/reports/` contains the flood-report form and location picker.
+- `components/ui/` contains shared interface primitives.
+- `lib/` contains report, advisory, map, and Supabase helpers.
+- `public/` contains static app icons and assets.
 
 ## Learn More
 
