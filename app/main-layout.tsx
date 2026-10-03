@@ -7,6 +7,7 @@ import { BarChart3, Bell, Map, Plus, UserRound, Waves, X } from 'lucide-react'
 import MapLoader from './map/map-loader'
 import ReportForm from '@/components/reports/report-form'
 import InfrastructureAuditForm from '@/components/reports/infrastructure-audit-form'
+import { AuthProvider, useAuth } from '@/components/auth/auth-provider'
 
 const navigation = [
   { href: '/', label: 'Map', Icon: Map },
@@ -15,13 +16,14 @@ const navigation = [
   { href: '/profile', label: 'Profile', Icon: UserRound },
 ]
 
-export default function MainLayout({ children }: { children: React.ReactNode }) {
+function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [reportMenuOpen, setReportMenuOpen] = useState(false)
   const [reportType, setReportType] = useState<'flood' | 'infrastructure' | null>(null)
   const [expanded, setExpanded] = useState(false)
   const pointerStart = useRef<number | null>(null)
   const isMap = pathname === '/' || pathname === '/map'
+  const { user, verified, requireVerified, openAccount } = useAuth()
 
   return (
     <div className="app-shell">
@@ -36,6 +38,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             <Icon /><span>{label}</span>
           </Link>
         })}
+        <button type="button" onClick={openAccount} aria-label={verified ? 'Account verified' : 'Sign in'} title={verified ? user?.email ?? user?.phone ?? 'Verified account' : 'Sign in to report or vote'} className="app-nav-link">
+          <UserRound /><span>{verified ? 'Account' : 'Sign in'}</span>
+        </button>
       </nav>
       {!isMap && <section className={`app-route-panel${expanded ? ' is-expanded' : ''}`}>
         <button type="button" className="app-panel-handle" aria-label={expanded ? 'Collapse panel' : 'Expand panel'} onPointerDown={(event) => { pointerStart.current = event.clientY }} onPointerUp={(event) => {
@@ -48,10 +53,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       </section>}
       {reportType === null && <div className="app-report-actions">
         {reportMenuOpen && <div className="app-report-menu" role="group" aria-label="Choose report type">
-          <button type="button" onClick={() => { setReportMenuOpen(false); setReportType('flood') }}>🌊 Flood / Rainfall Report</button>
-          <button type="button" onClick={() => { setReportMenuOpen(false); setReportType('infrastructure') }}>🧱 Infrastructure Audit</button>
+          <button type="button" onClick={() => requireVerified(() => { setReportMenuOpen(false); setReportType('flood') })}>🌊 Flood / Rainfall Report</button>
+          <button type="button" onClick={() => requireVerified(() => { setReportMenuOpen(false); setReportType('infrastructure') })}>🧱 Infrastructure Audit</button>
         </div>}
-        <button type="button" className="app-report-fab" aria-label="Report" aria-expanded={reportMenuOpen} onClick={() => setReportMenuOpen((open) => !open)}>
+        <button type="button" className="app-report-fab" aria-label="Report" aria-expanded={reportMenuOpen} onClick={() => requireVerified(() => setReportMenuOpen((open) => !open))}>
           {reportMenuOpen ? <X /> : <Plus />}<span>Report</span>
         </button>
       </div>}
@@ -59,4 +64,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       {reportType === 'infrastructure' && <InfrastructureAuditForm onClose={() => setReportType(null)} />}
     </div>
   )
+}
+
+export default function MainLayout({ children }: { children: React.ReactNode }) {
+  return <AuthProvider><MainLayoutContent>{children}</MainLayoutContent></AuthProvider>
 }

@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { clusterReports, type ReportCluster } from '@/lib/clustering'
 import { mockReports, severityMeta, statusMeta, timeAgo, type Report, type ReportStatus, type Severity } from '@/lib/types'
 import { MAP_TILE_ATTRIBUTION, MAP_TILE_URL } from '@/lib/map-tiles'
+import { useAuth } from '@/components/auth/auth-provider'
 
 type TimeRange = '1h' | '6h' | '24h'
 const center: [number, number] = [14.5995, 120.9842]
@@ -38,7 +39,6 @@ function MapContent({ reports, onSelect, onCluster }: { reports: Report[]; onSel
 
   return <>
     <MapEvents onZoom={setZoom} />
-    <RecenterButton />
     {clusters.map((cluster) => cluster.reportCount === 1 ? (
       <Marker key={cluster.memberIds[0]} position={[cluster.lat, cluster.lng]} icon={severityIcon(cluster.aggregateSeverity)} eventHandlers={{ click: () => onSelect(reportById.get(cluster.memberIds[0])!) }} />
     ) : (
@@ -69,6 +69,7 @@ function ReportDrawer({ report, onClose, onUpvote }: { report: Report; onClose: 
 }
 
 export default function MapClient() {
+  const { requireVerified } = useAuth()
   const [severity, setSeverity] = useState<Severity | 'ALL'>('ALL')
   const [status, setStatus] = useState<ReportStatus | 'ALL'>('ALL')
   const [timeRange, setTimeRange] = useState<TimeRange>('24h')
@@ -81,5 +82,11 @@ export default function MapClient() {
   const selectedWithUpvotes = selected ? { ...selected, upvoteCount: selected.upvoteCount + (upvotes[selected.id] ?? 0) } : null
   const selectedId = selected?.id
 
-  return <main className="map-shell"><header className="map-header"><Link href="/" className="map-brand"><ArrowLeft /> <span>KLIMATIX MAP</span></Link><div className="map-disclaimer">Community observation · Not official</div></header><section className="map-stage"><MapContainer center={center} zoom={11} minZoom={9} maxZoom={18} scrollWheelZoom className="leaflet-map"><TileLayer url={MAP_TILE_URL} attribution={MAP_TILE_ATTRIBUTION} /><MapContent reports={filteredReports} onSelect={setSelected} onCluster={() => undefined} /></MapContainer><FilterBar {...{ severity, status, timeRange, setSeverity, setStatus, setTimeRange }} /><div className="map-legend"><div className="legend-title"><Layers /> Severity</div>{Object.entries(severityMeta).map(([key, value]) => <div className="legend-row" key={key}><span style={{ background: value.color }} />{value.label}<small>{value.depth}</small></div>)}</div><div className="map-disclaimer-banner"><MapPin />{reports.length} field signals · Always verify conditions locally. This map is community-reported and not an official emergency service.</div>{selectedWithUpvotes && <ReportDrawer report={selectedWithUpvotes} onClose={() => setSelected(null)} onUpvote={() => selectedId && setUpvotes((current) => ({ ...current, [selectedId]: (current[selectedId] ?? 0) + 1 }))} />}</section></main>
+  return <main className="map-shell"><header className="map-header"><Link href="/" className="map-brand"><ArrowLeft /> <span>KLIMATIX MAP</span></Link><div className="map-disclaimer">Community observation · Not official</div></header><section className="map-stage"><MapContainer center={center} zoom={11} minZoom={9} maxZoom={18} scrollWheelZoom zoomControl={false} className="leaflet-map"><TileLayer url={MAP_TILE_URL} attribution={MAP_TILE_ATTRIBUTION} /><MapContent reports={filteredReports} onSelect={setSelected} onCluster={() => undefined} /></MapContainer><FilterBar {...{ severity, status, timeRange, setSeverity, setStatus, setTimeRange }} /><div className="map-legend"><div className="legend-title"><Layers /> Severity</div>{Object.entries(severityMeta).map(([key, value]) => <div className="legend-row" key={key}><span style={{ background: value.color }} />{value.label}<small>{value.depth}</small></div>)}</div><div className="map-disclaimer-banner"><MapPin />{reports.length} field signals · Always verify conditions locally. This map is community-reported and not an official emergency service.</div>{selectedWithUpvotes && <ReportDrawer report={selectedWithUpvotes} onClose={() => setSelected(null)} onUpvote={() => requireVerified(() => {
+    if (!selectedId || !selected) return
+    void upvoteReport(selectedId).then((updated) => {
+      setReports((current) => current.map((report) => report.id === selectedId ? updated : report))
+      setUpvotes((current) => ({ ...current, [selectedId]: updated.upvoteCount - selected.upvoteCount }))
+    }).catch((error: unknown) => toast.error(error instanceof Error ? error.message : 'Unable to record your vote.'))
+  })} />}</section></main>
 }

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Share2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { mockAdvisories, mockReports, severityMeta, type Severity } from '@/lib/types'
+import { useAuth } from '@/components/auth/auth-provider'
 
 const severityOrder: Severity[] = ['PASSABLE', 'MINOR', 'MODERATE', 'SEVERE']
 const areas = Array.from(new Set(mockReports.map((report) => report.area)))
@@ -14,6 +15,7 @@ function communitySeverity(index: number): Severity {
 }
 
 export default function AnnouncementsPage() {
+  const { requireVerified } = useAuth()
   const [municipality, setMunicipality] = useState('All municipalities')
   const [severity, setSeverity] = useState<Severity | 'ALL'>('ALL')
   const [fromDate, setFromDate] = useState('')
@@ -33,7 +35,7 @@ export default function AnnouncementsPage() {
   }), [areas, fromDate, municipality, severity, toDate])
 
   function vote(area: string, field: 'confirm' | 'dispute') {
-    setVotes((current) => ({ ...current, [area]: { confirm: current[area]?.confirm ?? 0, dispute: current[area]?.dispute ?? 0, [field]: (current[area]?.[field] ?? 0) + 1 } }))
+    requireVerified(() => setVotes((current) => ({ ...current, [area]: { confirm: current[area]?.confirm ?? 0, dispute: current[area]?.dispute ?? 0, [field]: (current[area]?.[field] ?? 0) + 1 } })))
   }
 
   async function shareCard(area: string, reportCount: number, level: Severity) {

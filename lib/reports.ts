@@ -1,3 +1,4 @@
+import { isVerifiedUser } from '@/lib/auth'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { mockReports, type Report, type Severity } from '@/lib/types'
 
@@ -54,16 +55,22 @@ async function sha256(value: string) {
 export async function createReport(input: { lat: number; lng: number; severity: Severity; description: string; photoUrl?: string | null }) {
   const supabase = getSupabaseClient()
   if (!supabase) throw new Error('Report service unavailable')
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError) throw new Error('Unable to verify your account. Please sign in again.')
+  if (!user || !isVerifiedUser(user)) throw new Error('Sign in and verify your phone or email before submitting a report.')
   const reporterHash = await sha256(browserToken('klimatix-browser-id'))
-  const { data, error } = await supabase.from('flood_reports').insert({ lat: input.lat, lng: input.lng, severity: severityToDb[input.severity], description: input.description, photo_url: input.photoUrl ?? null, source: 'WEB', reporter_hash: reporterHash }).select(REPORT_COLUMNS).single()
+  const { data, error } = await supabase.from('flood_reports').insert({ lat: input.lat, lng: input.lng, severity: severityToDb[input.severity], description: input.description, photo_url: input.photoUrl ?? null, source: 'WEB', reporter_hash: reporterHash, reporter_id: user.id }).select(REPORT_COLUMNS).single()
   if (error || !data) throw new Error('Unable to submit report')
   return mapReport(data as Record<string, unknown>)
 }
 
 export async function upvoteReport(reportId: string) {
   const supabase = getSupabaseClient()
-  if (!supabase) return null
-  const { error } = await supabase.from('flood_report_upvotes').insert({ report_id: reportId, voter_token: browserToken('klimatix-voter-token') })
+  if (!supabase) throw new Error('Report service unavailable')
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError) throw new Error('Unable to verify your account. Please sign in again.')
+  if (!user || !isVerifiedUser(user)) throw new Error('Sign in and verify your phone or email before voting.')
+  const { error } = await supabase.from('flood_report_upvotes').insert({ report_id: reportId, voter_token: user.id, user_id: user.id })
   if (error && !['23505', '409'].includes(error.code ?? '')) throw new Error('Unable to record upvote')
   const { data, error: fetchError } = await supabase.from('flood_reports').select(REPORT_COLUMNS).eq('id', reportId).single()
   if (fetchError || !data) throw new Error('Unable to refresh report')

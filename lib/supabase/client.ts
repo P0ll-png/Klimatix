@@ -35,13 +35,14 @@ type Database = {
           created_at?: string
           source: string
           reporter_hash: string
+          reporter_id: string
         }
         Update: Partial<Database['public']['Tables']['flood_reports']['Insert']>
         Relationships: []
       }
       flood_report_upvotes: {
-        Row: { id: string; report_id: string; voter_token: string; created_at: string }
-        Insert: { id?: string; report_id: string; voter_token: string; created_at?: string }
+        Row: { id: string; report_id: string; voter_token: string; user_id: string; created_at: string }
+        Insert: { id?: string; report_id: string; voter_token: string; user_id: string; created_at?: string }
         Update: Partial<Database['public']['Tables']['flood_report_upvotes']['Insert']>
         Relationships: []
       }
