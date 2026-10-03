@@ -3,8 +3,8 @@
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useEffect, useRef } from 'react'
-import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet'
-import { MAP_TILE_ATTRIBUTION, MAP_TILE_URL } from '@/lib/map-tiles'
+import { MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet'
+import OpenFreeMapLayer from '@/components/maps/open-free-map-layer'
 
 const CENTER: [number, number] = [14.5995, 120.9842]
 const pin = L.divIcon({ className: 'report-location-pin', html: '<span></span>', iconSize: [30, 36], iconAnchor: [15, 36] })
@@ -38,5 +38,5 @@ function Picker({ value, onChange }: Props) {
 }
 
 export default function ReportLocationMap({ value, onChange }: Props) {
-  return <div className="h-56 w-full overflow-hidden rounded-xl border border-[#1A3A6E] md:h-64"><MapContainer center={value ?? CENTER} zoom={12} scrollWheelZoom={false} className="report-location-map" touchZoom dragging><TileLayer url={MAP_TILE_URL} attribution={MAP_TILE_ATTRIBUTION} /><MapSizeFix /><Picker value={value} onChange={onChange} /></MapContainer></div>
+  return <div className="h-56 w-full overflow-hidden rounded-xl border border-[#1A3A6E] md:h-64"><MapContainer center={value ?? CENTER} zoom={12} scrollWheelZoom={false} className="report-location-map" touchZoom dragging><OpenFreeMapLayer /><MapSizeFix /><Picker value={value} onChange={onChange} /></MapContainer></div>
 }

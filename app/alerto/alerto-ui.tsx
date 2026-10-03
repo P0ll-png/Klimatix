@@ -8,7 +8,7 @@ import { nearestCenters } from '@/lib/evacuation'
 import { fetchReports } from '@/lib/reports'
 
 type Props = { fullAnnouncement?: boolean }
-const levelClasses = { MONITORED: 'border-[#87CEEB] text-[#87CEEB]', PREPARE: 'border-[#FF6B35] text-[#FF8F91]', ACT: 'border-[#E5383B] text-[#FF8F91]' }
+const levelClasses = { MONITORED: 'border-[var(--severity-safe)] text-[var(--severity-safe)]', PREPARE: 'border-[var(--severity-advisory)] text-[var(--severity-advisory)]', ACT: 'border-[var(--severity-critical)] text-[var(--severity-critical)]' }
 const actions = { PREPARE: ['Put the barangay response team on standby', 'Inspect and prepare evacuation centers', 'Review class suspension for the next school day', 'Advise residents in low-lying areas'], ACT: ['Consider preemptive evacuation of low-lying and riverside households', 'Consider suspending classes in affected areas', 'Open evacuation centers and activate the response team', 'Issue a public warning'] }
 
 function Logo() { return <Link href="/" className="flex items-center gap-3" aria-label="Klimatix home"><span className="grid size-10 place-items-center rounded-xl bg-[#10285b] text-[#87CEEB]"><Waves /></span><span><b className="tracking-[.18em]">KLIMATIX</b><small className="block text-[10px] tracking-[.26em] text-[#87CEEB]">BANTAY BAHA</small></span></Link> }
