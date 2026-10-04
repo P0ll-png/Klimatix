@@ -1,9 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useRef, useState } from 'react'
-import { BarChart3, Bell, Map, Plus, UserRound, Waves, X } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
+import { BarChart3, Bell, Blocks, Map, Plus, UserRound, Waves, X } from 'lucide-react'
 import MapLoader from './map/map-loader'
 import ReportForm from '@/components/reports/report-form'
 import InfrastructureAuditForm from '@/components/reports/infrastructure-audit-form'
@@ -11,19 +11,35 @@ import { AuthProvider, useAuth } from '@/components/auth/auth-provider'
 
 const navigation = [
   { href: '/', label: 'Map', Icon: Map },
+  { href: '/reports', label: 'Reports', Icon: Waves },
+  { href: '/audits', label: 'Audits', Icon: Blocks },
   { href: '/announcements', label: 'Announcements', Icon: Bell },
   { href: '/scorecards', label: 'Scorecards', Icon: BarChart3 },
-  { href: '/profile', label: 'Profile', Icon: UserRound },
+  { href: '/profile', label: 'Account', Icon: UserRound },
 ]
 
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [reportMenuOpen, setReportMenuOpen] = useState(false)
   const [reportType, setReportType] = useState<'flood' | 'infrastructure' | null>(null)
   const [expanded, setExpanded] = useState(false)
   const pointerStart = useRef<number | null>(null)
   const isMap = pathname === '/' || pathname === '/map'
-  const { user, verified, requireVerified, openAccount } = useAuth()
+  const { requireVerified } = useAuth()
+
+  useEffect(() => {
+    function handleMapMarker(event: Event) {
+      const detail = (event as CustomEvent<{ kind?: string; id?: string }>).detail
+      if (!detail?.id) return
+      const path = detail.kind === 'infrastructure_audit' ? '/audits' : detail.kind === 'flood_report' ? '/reports' : null
+      if (!path) return
+      setExpanded(true)
+      router.push(`${path}?selected=${encodeURIComponent(detail.id)}`)
+    }
+    window.addEventListener('klimatix:map-marker-selected', handleMapMarker)
+    return () => window.removeEventListener('klimatix:map-marker-selected', handleMapMarker)
+  }, [router])
 
   return (
     <div className="app-shell">
@@ -38,9 +54,6 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             <Icon /><span>{label}</span>
           </Link>
         })}
-        <button type="button" onClick={openAccount} aria-label={verified ? 'Account verified' : 'Sign in'} title={verified ? user?.email ?? user?.phone ?? 'Verified account' : 'Sign in to report or vote'} className="app-nav-link">
-          <UserRound /><span>{verified ? 'Account' : 'Sign in'}</span>
-        </button>
       </nav>
       {!isMap && <section className={`app-route-panel${expanded ? ' is-expanded' : ''}`}>
         <button type="button" className="app-panel-handle" aria-label={expanded ? 'Collapse panel' : 'Expand panel'} onPointerDown={(event) => { pointerStart.current = event.clientY }} onPointerUp={(event) => {
